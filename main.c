@@ -5,7 +5,7 @@
 #define TRUE 1
 #define FALSE 0
 
-char* Read(char** index, char* text){
+char* Read(char*** index, char** text){
 
     FILE * Onegin = fopen ("Onegin.txt", "rb");
     //FILE * Onegin_Sort = fopen ("Onegin_Sort.txt", "w");
@@ -20,23 +20,21 @@ char* Read(char** index, char* text){
         fseek (Onegin, 0, SEEK_SET);
     }
 
-    text = (char*) realloc (text, (size_of_file + 1) * sizeof(char));
+    *text = (char*) realloc (*text, (size_of_file + 1) * sizeof(char));
     assert (text != NULL);
 
-    size_t length = fread (text, sizeof(char), size_of_file, Onegin);
+    size_t length = fread (*text, sizeof(char), size_of_file, Onegin);
     assert (size_of_file == length);
 
     printf("size of file = %lld\n", size_of_file);
 
-    index = (char**) realloc (index, size_of_file * sizeof(char*));
+    *index = (char**) calloc (size_of_file, sizeof(char*));
     assert (index != NULL);
 
-    *index = text;
+    *index[0] = *text;
 
-    printf("text[seek] = %p\n", index[0]);
-
-//    printf ("\n%d", length);
-//    printf ("%s\n", text);
+    //printf ("%s\n", *text);
+    //printf("text[seek] = %p\t char is %c\n", *index[0], **index[0]);
 
     //fwrite(text, sizeof(char), size_of_file, Onegin_Sort);
 
@@ -44,26 +42,33 @@ char* Read(char** index, char* text){
     int number_of_strings = 1;
 
     for(long i = 0; i < size_of_file; i++){
-        if(*(text + i) == '\n'){
-            *(text + i) = '\0';
-            index[number_of_strings] = (text + i + 1);
 
-            int c = *(index[number_of_strings]);
-            printf("text[seek] = %p\t char is %c\n", index[number_of_strings], c);
+        //printf("I came to 'for' in Read! %c\n", (*text)[i]);
+
+        if((*text)[i] == '\n'){
+            //printf("I came to 'if' in 'for' in Read!\n");
+
+            (*text)[i] = '\0';
+            (*index)[number_of_strings] = *text + i + 1;
+
+            char c = *((*index)[number_of_strings]);
+            //printf("text[seek] = %p\t char is %c\n", (*index)[number_of_strings], c);
 
             number_of_strings++;
         }
+
+        //printf("I came out to 'for' in Read!\n\n");
     }
 
-    index = (char**) realloc (index, number_of_strings * sizeof(char*));
+    *index = (char**) realloc (*index, number_of_strings * sizeof(char*));
 
-    printf("number of strings = %d\n", number_of_strings);
+    //printf("number of strings = %d\n", number_of_strings);
 
-    printf("text[seek] after realloc = %p\n", index[0]);
+    //printf("index[1] after realloc = %p\n", (*index)[1]);
 
     fclose(Onegin);
 
-    return text;
+    return *text;
 }
 
 int Is_Letter(char c){
@@ -74,34 +79,39 @@ int Is_Letter(char c){
     }
 }
 
-int Compare (int j, char** index){
+int Compare (int j, char*** index){
 
-    !!!!!printf("the beginning of the string is %p\n", index[0]);
+    //printf("the beginning of 2 string in 'Compare' is %p\n", (*index)[1]);        //!!!!!!!!!!
 
     int i = 0;      //i for j-string
     for (int r = 0; ; r++){      //r for (j + 1) - string
 
         int I = -777, R = -777;
-        char c = *(index[j] + i);
+
+        char c = *((*index)[j] + i);
+
         if ((I = Is_Letter (c)) == FALSE){
             while ((I = Is_Letter (c)) == FALSE){
 
                 if ( c == '\r' || c == '\0') return FALSE;
                 i++;
-                c = *(index[j] + i);
+                c = *((*index)[j] + i);
             }
         }
 
-        if ((R = Is_Letter (*(*(index + j + 1) + r * sizeof(char)))) == FALSE){
-           while ((R = Is_Letter (* (*(index + j + 1) + r * sizeof(char)))) == FALSE){
+        c = *((*index)[j + 1] + r);
+
+        if ((R = Is_Letter (c)) == FALSE){
+           while ((R = Is_Letter (c)) == FALSE){
                 printf("R\n");
-                if ( *(*(index + j + 1) + r * sizeof(char)) == '\r' || *(*(index + j + 1) + r * sizeof(char)) == '\0') return TRUE;
+                if (c == '\r' || c == '\0') return TRUE;
                 r++;
+                c = *((*index)[j + 1] + r);
             }
         }
 
-        if ( *(*(index + j) + i * sizeof(char)) > *(*(index + j + 1) + r * sizeof(char))) return TRUE;
-        if ( *(*(index + j) + i * sizeof(char)) < *(*(index + j + 1) + r * sizeof(char))) return FALSE;
+        if (*((*index)[j] + i) > *((*index)[j + 1] + r)) return TRUE;
+        if (*((*index)[j] + i) < *((*index)[j + 1] + r)) return FALSE;
         i++;
 
     }
@@ -112,23 +122,20 @@ int main()
 
     //FILE * Onegin_Sort = fopen ("Onegin_Sort.txt", "w");
 
-    char* text = (char*) calloc (1, sizeof(char));
-    assert (text != NULL);
+    char* text = NULL;
 
-    char** index = (char**) calloc (1, sizeof(char*));
-    assert (index != NULL);
+    char** index = NULL;
 
-   !!!!!! printf("check theee first add = %p\n", index[0]);
+    Read(&index, &text);
 
-    Read(index, text);
-
-    int y = Compare(0, index);
-    printf("Let's compare 1 and 2 strings %d\n", y);
+    Compare(, &index);
+    //printf("Let's compare 1 and 2 strings %d\n", y);
     //Write();
 
 
     //fclose(Onegin_Sort);
-    //free(text);
+    free(text);
+    free(index);
     return 0;
 }
 
