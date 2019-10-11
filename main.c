@@ -33,7 +33,7 @@ char* Read(char*** index, char** text, int* index_size){
 
     *index[0] = *text;
 
-    //printf ("%s\n", *text);
+    printf ("%s\n", *text);
     //printf("text[seek] = %p\t char is %c\n", *index[0], **index[0]);
 
     //fwrite(text, sizeof(char), size_of_file, Onegin_Sort);
@@ -81,35 +81,27 @@ int Is_Letter(char c){
     }
 }
 
-int Compare (int j, int k, char*** index){      //TRUE if j-string > k-string
+int Compare (int j, int k, char*** index){      //TRUE if j-string >= k-string
 
     //printf("the beginning of 2 string in 'Compare' is %p\n", (*index)[1]);        //!!!!!!!!!!
 
     int i = 0;      //i for j-string
     for (int r = 0; ; r++){      //r for k - string
 
-        int I = 666, R = 666;
-
         char c = *((*index)[j] + i);
 
-        if ((I = Is_Letter (c)) == FALSE){
-            while ((I = Is_Letter (c)) == FALSE){
-
-                if ( c == '\r' || c == '\0') return FALSE;
-                i++;
-                c = *((*index)[j] + i);
-            }
+        while (!Is_Letter (c)){
+            if ( c == '\r' || c == '\0') return FALSE;
+            i++;
+            c = *((*index)[j] + i);
         }
 
         c = *((*index)[k] + r);
 
-        if ((R = Is_Letter (c)) == FALSE){
-           while ((R = Is_Letter (c)) == FALSE){
-                //printf("R\n");
-                if (c == '\r' || c == '\0') return TRUE;
-                r++;
-                c = *((*index)[k] + r);
-            }
+        while (!Is_Letter (c)){
+            if (c == '\r' || c == '\0') return TRUE;
+            r++;
+            c = *((*index)[k] + r);
         }
 
         if (*((*index)[j] + i) > *((*index)[k] + r)) return TRUE;
@@ -120,18 +112,19 @@ int Compare (int j, int k, char*** index){      //TRUE if j-string > k-string
 }
 
 void Qsort(char*** index, int a_begin, int a_end){
+
     int arr_size = a_end - a_begin + 1;
-    printf("I came to qsort index[arr_size - 1] = %d\t leftboarder = %d\n", (*index)[arr_size - 1], a_begin);
+    //printf("I came to qsort index[arr_size - 1] = %d\t leftboarder = %d\n", (*index)[arr_size - 1], a_begin);
 
     int left = a_begin;
     int right = a_end;
 
-    printf("index[left] = %d\t index[right] = %d\n", (*index)[left], (*index)[right]);
+    //printf("index[left] = %d\t index[right] = %d\n", (*index)[left], (*index)[right]);
 
     if(arr_size == 1) return;
 
     if (arr_size == 2){
-        if (Compare(left, right, index) == TRUE){
+        if (Compare(left, right, index)){
             char* t = (*index)[right];
             (*index)[right] = (*index)[left];
             (*index)[left] = t;
@@ -164,25 +157,27 @@ void Qsort(char*** index, int a_begin, int a_end){
     }
 
     int middle = a_begin + arr_size / 2;
-    printf("middle = %d\n", middle);
+    printf("middle = ");
+    puts((*index)[middle]);
+    printf("\n");
 
     while (right > left) {
-        printf("In high while\n");
+        //printf("In high while\n");
 
-        while (Compare(left, middle, index) == FALSE){
-            printf("In low while for left\t index[left] = %d\n", (*index)[left]);
+        while (Compare(middle, left, index) == TRUE){
+            printf("In low while for left\t index[left] = %c\n", *(*index)[left]);
             left++;
         }
 
         while (Compare(right, middle, index) == TRUE){
-            printf("In low while for right\t index[right] = %d\n", (*index)[right]);
+            printf("In low while for right\t index[right] = %c\n", *(*index)[right]);
             right--;
         }
 
         char* t = (*index)[right];
         (*index)[right] = (*index)[left];
         (*index)[left] = t;
-        printf("after swap: index[%d] = %d index[%d] = %d\n", left, (*index)[left], right, (*index)[right]);
+        printf("after swap: index[%d] = %c index[%d] = %c\n", left, *(*index)[left], right, *(*index)[right]);
         left++;
         right--;
     }
@@ -217,6 +212,7 @@ int main()
     Qsort(&index, 0, index_size - 1);
 
     Writing(index, index_size);
+    //printf("%d\t%d", *index[2], *index[3]);
     //fclose(Onegin_Sort);
     free(text);
     free(index);
