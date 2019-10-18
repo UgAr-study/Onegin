@@ -44,18 +44,26 @@ char* Read(char*** index, char** text, int* index_size){
     for(long i = 0; i < size_of_file; i++){
 
         //printf("I came to 'for' in Read! %c\n", (*text)[i]);
-
-        if((*text)[i] == '\n'){
+        int flag = 0;
+        if((*text)[i] == '\r'){
             //printf("I came to 'if' in 'for' in Read!\n");
-
+            flag = 1;
             (*text)[i] = '\0';
-            (*index)[number_of_strings] = *text + i + 1;
+            (*index)[number_of_strings] = *text + i + 2;
 
             //char c = *((*index)[number_of_strings]);
             //printf("text[seek] = %p\t char is %c\n", (*index)[number_of_strings], c);
 
             number_of_strings ++;
         }
+
+        if((*text)[i] == '\n' && flag == 0){
+            (*text)[i] = '\0';
+
+            if(i < size_of_file - 1)
+                (*index)[number_of_strings] = *text + i + 1;
+        }
+        flag = 0;
 
         //printf("I came out to 'for' in Read!\n\n");
     }
@@ -64,7 +72,7 @@ char* Read(char*** index, char** text, int* index_size){
 
     *index = (char**) realloc (*index, number_of_strings * sizeof(char*));
 
-    //printf("number of strings = %d\n", number_of_strings);
+    printf("number of strings = %d\n", number_of_strings);
 
     //printf("index[1] after realloc = %p\n", (*index)[1]);
 
@@ -73,39 +81,36 @@ char* Read(char*** index, char** text, int* index_size){
     return *text;
 }
 
-int Is_Letter(char c){
-    if((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) return TRUE;
-    else {
-        //printf("%d is not a char\n", c);
-        return FALSE;
-    }
+int Is_Letter(char* c){
+    if(*c >= 65 && *c <= 90) *c = *c + 32;
+    if((*c >= 65 && *c <= 90) || (*c >= 97 && *c <= 122)) return TRUE;
+    else return FALSE;
+
 }
 
-int Compare (int j, int k, char*** index){      //TRUE if j-string >= k-string
-
-    //printf("the beginning of 2 string in 'Compare' is %p\n", (*index)[1]);        //!!!!!!!!!!
+int Compare (int j, int k, char** index){      //TRUE if j-string > k-string
 
     int i = 0;      //i for j-string
     for (int r = 0; ; r++){      //r for k - string
 
-        char c = *((*index)[j] + i);
+        char c = *(index[j] + i);
 
-        while (!Is_Letter (c)){
-            if ( c == '\r' || c == '\0') return FALSE;
+        while (!Is_Letter (&c)){
+            if (c == '\0') return FALSE;
             i++;
-            c = *((*index)[j] + i);
+            c = *(index[j] + i);
         }
 
-        c = *((*index)[k] + r);
+        char ch = *(index[k] + r);
 
-        while (!Is_Letter (c)){
-            if (c == '\r' || c == '\0') return TRUE;
+        while (!Is_Letter (&ch)){
+            if (ch == '\0') return TRUE;
             r++;
-            c = *((*index)[k] + r);
+            ch = *(index[k] + r);
         }
 
-        if (*((*index)[j] + i) > *((*index)[k] + r)) return TRUE;
-        if (*((*index)[j] + i) < *((*index)[k] + r)) return FALSE;
+        if (c > ch) return TRUE;
+        if (c < ch) return FALSE;
         i++;
 
     }
@@ -124,7 +129,7 @@ void Qsort(char*** index, int a_begin, int a_end){
     if(arr_size == 1) return;
 
     if (arr_size == 2){
-        if (Compare(left, right, index)){
+        if (Compare(left, right, *index)){
             char* t = (*index)[right];
             (*index)[right] = (*index)[left];
             (*index)[left] = t;
@@ -135,19 +140,19 @@ void Qsort(char*** index, int a_begin, int a_end){
 
     if (arr_size == 3){
 
-        if (Compare(left, left + 1, index) == TRUE){
+        if (Compare(left, left + 1, *index)){
             char* t = (*index)[left + 1];
             (*index)[left + 1] = (*index)[left];
             (*index)[left] = t;
         }
 
-        if (Compare(left + 1, left + 2, index) == TRUE){
+        if (Compare(left + 1, left + 2, *index)){
             char* t = (*index)[left + 2];
             (*index)[left + 2] = (*index)[left + 1];
             (*index)[left + 1] = t;
         }
 
-        if (Compare(left, left + 1, index) == TRUE){
+        if (Compare(left, left + 1, *index)){
             char* t = (*index)[left + 1];
             (*index)[left + 1] = (*index)[left];
             (*index)[left] = t;
@@ -163,26 +168,68 @@ void Qsort(char*** index, int a_begin, int a_end){
 
     while (right > left) {
         //printf("In high while\n");
+        //printf("left = %d\n", left);
+        while (Compare(middle, left, *index)){
 
-        while (Compare(middle, left, index) == TRUE){
-            printf("In low while for left\t index[left] = %c\n", *(*index)[left]);
+            //printf("middle = ");
+            //puts((*index)[middle]);
+            //printf("\n");
+
+            printf("In low while for left\t index[%d] = %c\n\n", left, *(*index)[left]);
             left++;
         }
 
-        while (Compare(right, middle, index) == TRUE){
-            printf("In low while for right\t index[right] = %c\n", *(*index)[right]);
+        while (Compare(right, middle, *index)){
+
+            //printf("middle = ");
+            //puts((*index)[middle]);
+            //printf("\n");
+
+            printf("In low while for right\t index[%d] = %c\n\n", right, *(*index)[right]);
             right--;
         }
 
-        char* t = (*index)[right];
-        (*index)[right] = (*index)[left];
-        (*index)[left] = t;
-        printf("after swap: index[%d] = %c index[%d] = %c\n", left, *(*index)[left], right, *(*index)[right]);
-        left++;
-        right--;
+        if(right > left){
+
+            if(left == middle){
+                char* t = (*index)[right];
+                (*index)[right] = (*index)[left];
+                (*index)[left] = t;
+                middle = right;
+
+                printf("after swap in l = m: index[%d] = %c index[%d] = %c\n", left, *(*index)[left], right, *(*index)[right]);
+                left++;
+                right--;
+            }
+
+            if(right == middle){
+                char* t = (*index)[right];
+                (*index)[right] = (*index)[left];
+                (*index)[left] = t;
+                middle = left;
+
+                printf("after swap in r = m: index[%d] = %c index[%d] = %c\n", left, *(*index)[left], right, *(*index)[right]);
+                left++;
+                right--;
+            } else {
+
+                char* t = (*index)[right];
+                (*index)[right] = (*index)[left];
+                (*index)[left] = t;
+                printf("after swap: index[%d] = %c index[%d] = %c\n", left, *(*index)[left], right, *(*index)[right]);
+                left++;
+                right--;
+            }
+        }
     }
 
-    //printf("before the recursion\n");
+    //printf("left = %d\t right = %d\n", left, right);
+    if(left - right == 2){
+        if(Compare(right + 1, middle, *index))
+            left--;
+        else right ++;
+    }
+
     Qsort (index, a_begin, right);
     Qsort (index, left, a_end);
 
@@ -190,30 +237,24 @@ void Qsort(char*** index, int a_begin, int a_end){
 }
 
 void Writing(char** index, int index_size){
-    for(int i = 0; i < index_size; i++)
-        puts(index[i]);
+    FILE * Onegin_Sort = fopen ("Onegin_Sort.txt", "w");
+    for(int i = 0; i < index_size; i++){
+        //fputs(index[i], Onegin_Sort);
+        fprintf(Onegin_Sort, "%s\n", index[i]);
+    }
+    fclose(Onegin_Sort);
 }
 
-int main()
-{
-
-    //FILE * Onegin_Sort = fopen ("Onegin_Sort.txt", "w");
-
+int main(){
     char* text = NULL;
-
     char** index = NULL;
 
     int index_size = 0;
 
     Read(&index, &text, &index_size);
-
-//    int y = Compare(1, &index);
-//    printf("Let's compare 1 and 2 strings %d\n", y);
     Qsort(&index, 0, index_size - 1);
-
     Writing(index, index_size);
-    //printf("%d\t%d", *index[2], *index[3]);
-    //fclose(Onegin_Sort);
+
     free(text);
     free(index);
     return 0;
