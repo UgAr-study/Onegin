@@ -5,7 +5,7 @@
 #define TRUE 1
 #define FALSE 0
 
-char* Read(char*** index, char** text, int* index_size){
+char* Read(char*** index, char** text, int* index_size, int* text_size){
 
     FILE * Onegin = fopen ("Onegin.txt", "rb");
 
@@ -54,6 +54,7 @@ char* Read(char*** index, char** text, int* index_size){
     }
 
     *index_size = number_of_strings;
+    *text_size = size_of_file;
 
     *index = (char**) realloc (*index, number_of_strings * sizeof(char*));
 
@@ -77,6 +78,7 @@ int Compare (int j, int k, char** index){      //TRUE if j-string > k-string
     for (int r = 0; ; r++){      //r for k - string
 
         char c = *(index[j] + i);
+        printf("c = %c\n", c);
 
         while (!Is_Letter (&c)){
             if (c == '\0') return FALSE;
@@ -85,6 +87,7 @@ int Compare (int j, int k, char** index){      //TRUE if j-string > k-string
         }
 
         char ch = *(index[k] + r);
+        printf("ch = %c\n", ch);
 
         while (!Is_Letter (&ch)){
             if (ch == '\0') return TRUE;
@@ -99,7 +102,7 @@ int Compare (int j, int k, char** index){      //TRUE if j-string > k-string
     }
 }
 
-void Qsort(char*** index, int a_begin, int a_end){
+void Qsort(char*** index, int a_begin, int a_end, int (*Compare) (int j, int k, char** index)){
 
     int arr_size = a_end - a_begin + 1;
     //printf("I came to qsort index[arr_size - 1] = %d\t leftboarder = %d\n", (*index)[arr_size - 1], a_begin);
@@ -215,10 +218,51 @@ void Qsort(char*** index, int a_begin, int a_end){
         else right++;
     }
 
-    Qsort (index, a_begin, right);
-    Qsort (index, left, a_end);
+    Qsort (index, a_begin, right, Compare);
+    Qsort (index, left, a_end, Compare);
 
     return;
+}
+
+int Revers_Compare (int j, int k, char** index){
+
+    int j_size = 0;
+
+    while (*(index[j] + j_size) != '\0')
+        j_size++;
+
+    int k_size = 0;
+
+    while (*(index[k] + k_size) != '\0')
+        k_size++;
+
+    int i = j_size - 1;      //i for j-string
+    for (int r = k_size - 1; r >= 0 ; r--){      //r for k - string
+
+        char c = *(index[j] + i);
+        printf("c = %c\n", c);
+
+        while (!Is_Letter (&c)){
+            if (i == 0) return FALSE;
+            i--;
+            c = *(index[j] + i);
+        }
+
+        char ch = *(index[k] + r);
+        printf("ch = %c\n", ch);
+
+        while (!Is_Letter (&ch)){
+            if (r == 0) return TRUE;
+            r--;
+            ch = *(index[k] + r);
+        }
+
+        if (c > ch) return TRUE;
+        if (c < ch) return FALSE;
+        i--;
+        if(i == 0) return FALSE;
+
+    }
 }
 
 void Writing(char** index, int index_size){
@@ -230,15 +274,30 @@ void Writing(char** index, int index_size){
     fclose(Onegin_Sort);
 }
 
+void Revers_Writing(char** index, int index_size){
+    FILE * Onegin_Revers_Sort = fopen ("Onegin_Revers_Sort.txt", "w");
+    for(int i = 0; i < index_size; i++){
+        //fputs(index[i], Onegin_Sort);
+        fprintf(Onegin_Revers_Sort, "%s\n", index[i]);
+    }
+    fclose(Onegin_Revers_Sort);
+}
+
 int main(){
     char* text = NULL;
     char** index = NULL;
 
     int index_size = 0;
+    int text_size = 0;
 
-    Read(&index, &text, &index_size);
-    Qsort(&index, 0, index_size - 1);
+    Read(&index, &text, &index_size, &text_size);
+    Qsort(&index, 0, index_size - 1, Compare);
     Writing(index, index_size);
+
+    printf("\nRevers begin\n");
+
+    Qsort(&index, 0, index_size - 1, Revers_Compare);
+    Revers_Writing(index, index_size);
 
     free(text);
     free(index);
